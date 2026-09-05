@@ -5,7 +5,6 @@ import com.oheers.fish.fishing.items.FishManager;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.Skull;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -22,13 +21,10 @@ public class SkullSaver implements Listener {
         if (event.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
         Block block = event.getBlock();
 
-        if (!isHead(block)) return;
+        if (!(block.getState(false) instanceof Skull skull)) return;
         if (block.getDrops().isEmpty()) return;
 
-        BlockState state = event.getBlock().getState();
-        Skull skullMeta = (Skull) state;
-
-        IFish f = FishManager.getInstance().getFish(skullMeta, event.getPlayer());
+        IFish f = FishManager.getInstance().getFish(skull, event.getPlayer());
         if (f == null) {
             return;
         }
@@ -48,30 +44,25 @@ public class SkullSaver implements Listener {
         if (event.isCancelled()) {
             return;
         }
-        
+
         Block block = event.getBlock();
         ItemStack stack = event.getItemInHand();
-        
-        if (stack.getAmount() == 0 || !stack.hasItemMeta()) {
+
+        if (stack.isEmpty()) {
             return;
         }
-        
-        if (FishManager.getInstance().isFish(stack)) {
-            
-            if (block.getState() instanceof Skull sm) {
-                IFish fish = FishManager.getInstance().getFish(stack);
-                if (fish != null) {
-                    FishManager.getInstance().setFishNbt(sm, fish);
-                    sm.update();
-                }
-            } else {
-                event.setCancelled(true);
-            }
+
+        IFish fish = FishManager.getInstance().getFish(stack);
+        if (fish == null) {
+            return;
         }
-    }
-    
-    private boolean isHead(final Block block) {
-        return block.getType() == Material.PLAYER_HEAD || block.getType() == Material.PLAYER_WALL_HEAD;
+
+        if (block.getState(false) instanceof Skull sm) {
+            FishManager.getInstance().setFishNbt(sm, fish);
+            sm.update();
+        } else {
+            event.setCancelled(true);
+        }
     }
     
 }
